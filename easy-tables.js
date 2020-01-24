@@ -185,7 +185,11 @@ const reloadTableData = async tblProps => {
         tblRow = `<tr class="${ ('row_class' in row ? row.row_class : '') }">`;
         columns.forEach(col => {
             tblRow += `<td class="${ ( 'class' in col ) ? col.class : '' }">`;
-            tblRow += row[col.ajaxKey];
+            if (col.render){
+                tblRow += col.render(row[col.ajaxKey])
+            } else {
+                tblRow += row[col.ajaxKey];
+            }
             tblRow += "</td>";
         });
         tblRow += "</tr>";
