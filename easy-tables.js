@@ -27,7 +27,21 @@ const initEasyTable = tblProps => {
                     filter.name = col.label.toLowerCase().split(' ').join('-');
                     colFilter.appendChild(filter);
                     break;
-
+                case 'select':
+                    if (col.selectOptions){
+                        options = col.selectOptions.map(opt => `<option value='${ opt[0] }'>${opt[1]}</option>`).join();
+                        select = `
+                            <select
+                                name="${col.label.toLowerCase().split(' ').join('-')}"
+                                id="${col.label.toLowerCase().split(' ').join('-')}"
+                            >
+                                <option value=''>-</option>
+                                ${options}
+                            </select>
+                        `;
+                        colFilter.insertAdjacentHTML('afterbegin', select);
+                    }
+                    break;
                 default:
                     filter = document.createElement('input');
                     filter.type = 'text';
@@ -94,11 +108,20 @@ const initPaginationListeners = (tblProps) => {
     }));
 }
 
-// init keyup listener for filters
+// init filters
 const initFilters = (tblProps) => {
+    // init keyup on inputs
     inputs = tblProps.tblContainer.querySelectorAll('input');
     inputs.forEach(input => {
         input.addEventListener('keyup', () => {
+            page = 1;
+            reloadTableData(tblProps);
+        });
+    });
+    // init change on selects
+    selects = tblProps.tblContainer.querySelectorAll('select');
+    selects.forEach(select => {
+        select.addEventListener('change', () => {
             page = 1;
             reloadTableData(tblProps);
         });
@@ -149,11 +172,11 @@ const goToPage = (e, tblProps) => {
     reloadTableData(tblProps);
 }
 
-const reloadQueryData = (inputs, tblProps) => {
+const reloadQueryData = (filters, tblProps) => {
     let data = {}
     let filter = {}
-    inputs.forEach(input => {
-        filter[input.name] = input.value;
+    filters.forEach(f => {
+        filter[f.name] = f.value;
     });
     data['filter'] = filter;
     data['sort'] = JSON.parse(window.sessionStorage.getItem(tblProps.tblLabel + "sort"));
@@ -163,8 +186,8 @@ const reloadQueryData = (inputs, tblProps) => {
 
 const reloadTableData = async tblProps => {
     const table = tblContainer.querySelector('table');
-    const inputs = table.querySelectorAll('.table-filter input');
-    const queryData = await reloadQueryData(inputs, tblProps);
+    const filters = table.querySelectorAll('.table-filter input, .table-filter select');
+    const queryData = await reloadQueryData(filters, tblProps);
     const columns = tblProps.columns;
 
     // get data from api
